@@ -1,6 +1,6 @@
-import cupy as cp
+import numpy as np
 
-RANGES = cp.array([
+RANGES = np.array([
     [0, 1500], # flight
     [0, 400],  # hotel
     [0, 2000], # airbnb
@@ -38,30 +38,30 @@ class Budget:
         test_budgets = []
         for i in range(self.num):
             # work trips
-            w_trips = cp.ones((WORK_TRIPS_MAX,1))
-            while cp.sum(w_trips) >= WORK_TRIPS_MAX:
-                w_trips = cp.array([cp.random.randint(WORK_TRIPS[1][0], WORK_TRIPS[1][1]).item() for i in range(cp.random.randint(WORK_TRIPS[0][0], WORK_TRIPS[0][1]).item())])
+            w_trips = np.ones((WORK_TRIPS_MAX,1))
+            while np.sum(w_trips) >= WORK_TRIPS_MAX:
+                w_trips = np.array([np.random.randint(WORK_TRIPS[1][0], WORK_TRIPS[1][1]) for i in range(np.random.randint(WORK_TRIPS[0][0], WORK_TRIPS[0][1]))])
 
             # personal trips
-            p_trips = cp.array([cp.random.randint(PERSONAL_TRIPS[1][0], PERSONAL_TRIPS[1][1]).item() for i in range(cp.random.randint(PERSONAL_TRIPS[0][0], PERSONAL_TRIPS[0][1]).item())])
+            p_trips = np.array([np.random.randint(PERSONAL_TRIPS[1][0], PERSONAL_TRIPS[1][1]) for i in range(np.random.randint(PERSONAL_TRIPS[0][0], PERSONAL_TRIPS[0][1]))])
 
-            b = cp.zeros((len(RANGES)))
+            b = np.zeros((len(RANGES)))
             b[0] = (len(w_trips) + len(p_trips)) * AVG_FLIGHT
             #if a work trip is less than 3 days, stay in a hotel
-            b[1] = cp.sum(w_trips[w_trips < 3]) * AVG_HOTEL
+            b[1] = np.sum(w_trips[w_trips < 3]) * AVG_HOTEL
             #a personal trip has a 25% chance of staying in a hotel
-            b[1] += cp.sum(p_trips[cp.random.choice([0,1], p=[.75, .25], size=len(p_trips)) == 1])  * AVG_HOTEL
+            b[1] += np.sum(p_trips[np.random.choice([0,1], p=[.75, .25], size=len(p_trips)) == 1])  * AVG_HOTEL
             #if a work trip is 3 days or more, stay in an airbnb with a 50% chance or 0
-            b[2] = cp.sum(w_trips[w_trips >= 3] * AVG_AIRBNB * cp.random.randint(0,2,len(w_trips[w_trips >= 3])))
+            b[2] = np.sum(w_trips[w_trips >= 3] * AVG_AIRBNB * np.random.randint(0,2,len(w_trips[w_trips >= 3])))
             #a work trip has a 75% chance of renting a car
-            b[3] = cp.sum(w_trips * cp.random.choice([0, 1], p=[0.25, 0.75], size=len(w_trips)) * AVG_CAR)
+            b[3] = np.sum(w_trips * np.random.choice([0, 1], p=[0.25, 0.75], size=len(w_trips)) * AVG_CAR)
             #all other categories generated randomly in ranges
-            b[4:] = cp.array([cp.random.randint(RANGES[i][0], RANGES[i][1]).item() for i in range(4, len(RANGES))])
+            b[4:] = np.array([np.random.randint(RANGES[i][0], RANGES[i][1]) for i in range(4, len(RANGES))])
 
-            test_budgets.append(cp.transpose(b))
+            test_budgets.append(np.transpose(b))
             #print('\nflight: ${:.2f}, hotel: ${:.2f}, airbnb: ${:.2f}, rental: ${:.2f}, grocery: ${:.2f}, dining: ${:.2f}, streaming: ${:.2f}, shopping: ${:.2f}, other: ${:.2f}'.format(b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7], b[8]))
             #print('You have {} work trips with and {} personal trips. Your total budget is ${:.2f}.\n'.format(len(w_trips), len(p_trips), sum(b)))
 
-        #print(cp.hstack((self.test_budgets, cp.sum(self.test_budgets, axis=1).reshape(-1,1))))
-        return cp.array(test_budgets)
+        #print(np.hstack((self.test_budgets, np.sum(self.test_budgets, axis=1).reshape(-1,1))))
+        return np.array(test_budgets)
     
