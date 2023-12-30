@@ -10,6 +10,7 @@ RANGES = np.array([
     [40, 100], # streaming
     [200, 500], # shopping
     [0, 100], # transit
+    [1050, 1100], #rent
     [0, 200] # other
 ])
 

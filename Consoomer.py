@@ -3,22 +3,25 @@ from multiprocessing import Pool
 from copy import deepcopy
 
 class Consoomer:
-    def __init__(self, index, purchases=np.zeros((10), dtype=int)):
+    def __init__(self, index, purchases=np.zeros((11), dtype=int)):
         self.index = index
         self.population = None
         self.cards = []
         self.purchases = purchases
         self.fees = 0
-        self.points = np.zeros((10), dtype=int)
+        self.points = np.zeros((11), dtype=int)
+        self.student = 1
+        self.business = 0
 
     def init_cards(self, cards_ref):
-        num_cards = np.random.randint(3, 6)
+        self.cards_ref = cards_ref
+        num_cards = np.random.randint(2,7)
         for i in range(num_cards):
             if i == 0:
                 self.cards.append(23) #amex gold i already have this one
             else:
                 card = np.random.randint(0, np.shape(cards_ref)[0])
-                while card in self.cards:
+                while card in self.cards or cards_ref[card][0] > self.student or cards_ref[card][1] > self.business:
                     card = np.random.randint(0, np.shape(cards_ref)[0])
                 self.cards.append(card)
         self.cards = np.asarray(self.cards)
@@ -27,7 +30,7 @@ class Consoomer:
         # randomly assign cards from self.cards into self.purchases repeats allowed
         self.purchases = np.random.choice(self.cards, len(self.purchases)).astype(int)
     
-    def shuffle_cards(self, shuffle=0.75):
+    def shuffle_cards(self, shuffle=0.5):
         # randomly assign cards from self.cards into self.purchases repeats allowed4
         #print(f"Shuffling cards: {self.cards} with distribution {self.purchases}")
         for i in range(len(self.purchases)):
@@ -37,7 +40,7 @@ class Consoomer:
         #print(f"Shuffled cards: {self.cards} with distribution {self.purchases}")
         return self
 
-    def mutate_cards(self, retention=0.70):
+    def mutate_cards(self, retention=0.50):
         """
         retention: probability of keeping all cards from previous generation
         shuffle: probability of using same card for a given category from previous generation
@@ -48,7 +51,7 @@ class Consoomer:
             cur_card = self.cards[i]
             if np.random.random() >= retention:
                 new_card = np.random.randint(0, self.card_mat_len)
-                while new_card in self.cards:
+                while new_card in self.cards or self.cards_ref[new_card][0] > self.student or self.cards_ref[new_card][1] > self.business:
                     #print(f"New card {new_card} already in cards {self.cards}")
                     new_card = np.random.randint(0, self.card_mat_len)
                 self.cards[i] = int(new_card)
@@ -63,7 +66,7 @@ class Consoomer:
     def breed(self, mate, card_mat_len, index=-1):
         new_cons = deepcopy(self)
         new_cons.cards = []
-        new_cons.purchases = np.zeros((10), dtype=int)
+        new_cons.purchases = np.zeros((11), dtype=int)
         new_cons.card_mat_len = card_mat_len
         #pick length of cards as random choice between the parents length
         off = 0
