@@ -12,6 +12,7 @@ class Consoomer:
         self.points = np.zeros((11), dtype=int)
         self.student = 1
         self.business = 0
+        self.bonus_cat_card = []
 
     def init_cards(self, cards_ref):
         self.cards_ref = cards_ref
@@ -30,7 +31,7 @@ class Consoomer:
         # randomly assign cards from self.cards into self.purchases repeats allowed
         self.purchases = np.random.choice(self.cards, len(self.purchases)).astype(int)
     
-    def shuffle_cards(self, shuffle=0.5):
+    def shuffle_cards(self, shuffle=0.75):
         # randomly assign cards from self.cards into self.purchases repeats allowed4
         #print(f"Shuffling cards: {self.cards} with distribution {self.purchases}")
         for i in range(len(self.purchases)):
@@ -40,7 +41,7 @@ class Consoomer:
         #print(f"Shuffled cards: {self.cards} with distribution {self.purchases}")
         return self
 
-    def mutate_cards(self, retention=0.50):
+    def mutate_cards(self, retention=0.75):
         """
         retention: probability of keeping all cards from previous generation
         shuffle: probability of using same card for a given category from previous generation

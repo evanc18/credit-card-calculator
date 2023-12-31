@@ -14,7 +14,7 @@ CARD_MAT_LEN = 0
 
 class Simulation:
     
-    def __init__(self, population_size=300, generations=5000, budgets=6*12, elitism_rate=0.1):
+    def __init__(self, population_size=1000, generations=200, budgets=6*12, elitism_rate=0.1):
         self.population_size = population_size
         self.generations = generations
         self.budgets = budgets
@@ -59,7 +59,12 @@ class Simulation:
             for i in tqdm(range(0, len(gen_budgets), 12), desc=f'Generation {g+1}/{self.generations}', ncols=100):
                 self.year = np.transpose(gen_budgets[i:i+12])
                 self.i = i
-                self.rewards[:, g] = np.array([self.run_sim_for_consoomer(c) for c in self.consoomers]).reshape(len(self.consoomers))
+                c_i = 0
+                for c in self.consoomers:
+                    run_result = self.run_sim_for_consoomer(c)
+                    self.rewards[c_i, g] = run_result[0]
+                    self.consoomers[c_i].bonus_cat_card = run_result[1]
+                    c_i += 1
             
 
             print('Generation: {}, Mean: {:.2f}, Max: {:.2f}, Min: {:.2f}, Std: {:.2f}'.format(g+1, np.mean(self.rewards[:, g]), np.max(self.rewards[:, g]), np.min(self.rewards[:, g]), np.std(self.rewards[:, g])))
@@ -98,7 +103,7 @@ class Simulation:
 
             best_consoomers = sorted_rewards[-1:-4:-1]
             for i in best_consoomers:
-                print(f"Best {i} consoomer: {self.consoomers[i].cards} with distribution {self.consoomers[i].purchases}")
+                print(f"Best {i} consoomer: {self.consoomers[i].cards} with distribution {self.consoomers[i].purchases} and bonus category use {self.consoomers[i].bonus_cat_card}")
             print('\n')
 
             bred = []
@@ -116,7 +121,8 @@ class Simulation:
     def run_sim_for_consoomer(self, c):
         points = np.array([np.diag(self.points_mat[c.purchases, :])]).reshape(1, 11, 1)
         cashback = np.array([np.diag(self.cashback_mat[c.purchases, :])]).reshape(1, 11, 1)
-        cashback, other_cb, points, other_p = self.calc_custom_rewards(cashback, points, c)
+        cashback, other_cb, points, other_p, bonus_cat_card, bonus_cat_cb = self.calc_custom_rewards(cashback, points, c)
+        c.bonus_cat_cb = bonus_cat_cb
 
         points = np.sum(points * self.year, axis=1)
         cashback = np.sum(cashback * self.year, axis=1)
@@ -136,8 +142,9 @@ class Simulation:
         points = points / 100
 
         annual_fee = np.array([c.calc_annual_fee(self.annual_fee_mat)])
+        #print(bonus_cat_card)
         #print(f"Annual fee: {annual_fee}, points: {points}, cashback: {cashback}, bonus_p: {bonus_p}, bonus_cb: {bonus_cb}, other_cb: {other_cb}, other_p: {other_p}")
-        return np.sum(points + cashback, axis=1) + annual_fee + bonus_p + bonus_cb + other_cb + other_p
+        return [np.sum(points + cashback, axis=1) + annual_fee + bonus_p + bonus_cb + other_cb + other_p + bonus_cat_cb, bonus_cat_card]
     
     def calc_custom_rewards(self, cashback, points, c):
         # bank of america customized cash rewards allows for 3% cashback on a category of your choice from
@@ -201,20 +208,32 @@ class Simulation:
                     other_p += (2 * 1000) + (3 * (x1_sum - 1000)) + (2 * (x1_sum - 7500))
             points[0, x1_cc_categories, 0] = 0
         
-        if 999 in c.cards:
-            x1_min_cc_bonus_p = 1000
-            x1_cc_categories = np.where(c.purchases == 51, 1, 0)
+        # ROTATING CATEGORIES CARDS
+        # discover it card, 5% on rotating categories. This is a bit more complicated because we assign cards to categories 
+        # prior to reward calculation. We designate a rotating category as a random category every quarter. If the
+        # card allows bonus in that category, and the bonus is greater than the current card, we assign the card to that
+        # category. Bonus cats are grocery, restaurants, gas up to quarterly max of 1000
+        bonus_cat_card = []
+        bonus_cat_cb = 0
+        if 51 in c.cards:
+            bonus = .05
+            dit_min_cc_bonus_p = 1000
+            dit_cc_categories = np.where(c.purchases == 51, 1, 0)
             for quarter in range(4):
-                five_per_bonus_cat = np.random.choice([0, 0, 0, 0, 4, 5, 6, 7, 8, 0, 10])
-                if x1_cc_categories[five_per_bonus_cat] == 1:
-                    if c.purchases[five_per_bonus_cat] <= 1500:
-                        other_cb += 0.05 * 1500
-                    else:
-                        other_cb += 0.05 * 1500 + (0.01 * (c.purchases[five_per_bonus_cat] - 1500))
+                quart_bonus_cat = np.random.choice([4, 5, 6, 7, 8, 10])
+                cur_bonus = self.cashback_mat[c.purchases[quart_bonus_cat], quart_bonus_cat]
+                if bonus > cur_bonus:
+                    quart_sum = np.sum(self.year[:, quarter*4:quarter*4+4], axis=1)
+                    bonus_cat_card.append((51, quart_bonus_cat))
+                    #print(f'QUart sum {quart_sum} Empty cat mat {empty_cat_mat_with_bonus},')
+                    bonus_cat_cb += quart_sum[quart_bonus_cat] * bonus
+                    #The original card that was selected for the year still needs to gain rewards, but not for
+                    #this quarter. So no update to cashback but subtract what would have been the rewards
+                    other_cb -= quart_sum[quart_bonus_cat] * cur_bonus
 
-            
 
-        return cashback, other_cb, points, other_p
+        #print(bonus_cat_cb)
+        return cashback, other_cb, points, other_p, bonus_cat_card, bonus_cat_cb
 
     def load_cards(self):
         dat = pd.read_csv("C:/Users/EvanChase/Documents/Repos/credit-card-calculator/cards.csv")
