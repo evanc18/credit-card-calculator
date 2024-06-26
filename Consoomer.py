@@ -16,10 +16,12 @@ class Consoomer:
 
     def init_cards(self, cards_ref):
         self.cards_ref = cards_ref
-        num_cards = np.random.randint(2,7)
+        num_cards = np.random.randint(2,9)
         for i in range(num_cards):
             if i == 0:
                 self.cards.append(23) #amex gold i already have this one
+            if i==1:
+                self.cards.append(42)
             else:
                 card = np.random.randint(0, np.shape(cards_ref)[0])
                 while card in self.cards or cards_ref[card][0] > self.student or cards_ref[card][1] > self.business:

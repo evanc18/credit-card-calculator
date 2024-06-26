@@ -14,7 +14,7 @@ CARD_MAT_LEN = 0
 
 class Simulation:
     
-    def __init__(self, population_size=1000, generations=200, budgets=6*12, elitism_rate=0.1):
+    def __init__(self, population_size=1000, generations=10000, budgets=2*12, elitism_rate=0.06):
         self.population_size = population_size
         self.generations = generations
         self.budgets = budgets
@@ -28,7 +28,7 @@ class Simulation:
     
     def run(self):
         self.points_mat = self.cards_ref[:, -22:-11].astype(int)
-        print(np.shape(self.points_mat))
+        #print(np.shape(self.points_mat))
         self.cashback_mat = self.cards_ref[:, -11:].astype(float) 
         self.annual_fee_mat = self.cards_ref[:, 3].astype(int)
         self.anniv_points_mat = self.cards_ref[:, 4].astype(int)
@@ -117,6 +117,7 @@ class Simulation:
 
             self.consoomers = next_elites + next_elites_shuffled + bred
             np.savetxt("card_use_mat.csv", card_use_mat, delimiter=",", fmt='%.0f')
+        print(card_use_mat)
     
     def run_sim_for_consoomer(self, c):
         points = np.array([np.diag(self.points_mat[c.purchases, :])]).reshape(1, 11, 1)

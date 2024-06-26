@@ -2,8 +2,8 @@ import numpy as np
 
 RANGES = np.array([
     [0, 1500], # flight
-    [0, 400],  # hotel
-    [0, 2000], # airbnb
+    [0, 100],  # hotel
+    [0, 2500], # airbnb
     [0, 850],  # rental
     [200, 400], # grocery
     [150, 350], # dining
